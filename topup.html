@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Выбор суммы пополнения</title>
+  <style>
+    :root{--card-bg: rgba(255,255,255,0.95);--accent:#2b7cff;}
+    html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;color:#111;}
+    body{
+      background: url('textur-gas-kvas-com-vlpu-p-teksturi-treidinga-1.jpg') center/cover no-repeat fixed;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .card{width:420px;padding:22px;border-radius:10px;box-shadow:0 6px 30px rgba(0,0,0,0.4);background:var(--card-bg);}
+    h1{margin:0 0 14px;font-size:18px;text-align:center;}
+    .amounts{display:flex;gap:10px;justify-content:space-between;margin-top:12px}
+    .btn-amt{flex:1;padding:10px;border-radius:8px;border:1px solid #d7d7d7;background:white;cursor:pointer;text-align:center;user-select:none}
+    .btn-amt.active{border-color:var(--accent);box-shadow:0 2px 8px rgba(43,124,255,0.15)}
+    .custom{margin-top:12px;display:flex;gap:8px}
+    input[type="number"]{flex:1;padding:10px;border-radius:8px;border:1px solid #d7d7d7}
+    button.pay{margin-top:14px;width:100%;padding:11px;border:0;border-radius:8px;background:var(--accent);color:white;font-weight:600;cursor:pointer}
+    .info{font-size:13px;color:#666;margin-top:8px;text-align:center}
+    .error{color:#b00020;font-size:13px;margin-top:8px;text-align:center;display:none}
+  </style>
+</head>
+<body>
+  <div class="card" role="main">
+    <h1>Пополнение счёта</h1>
+    <div class="info" id="welcome"></div>
+
+    <div class="amounts" role="list">
+      <div class="btn-amt" data-amt="100">100 $</div>
+      <div class="btn-amt" data-amt="500">500 $</div>
+      <div class="btn-amt" data-amt="1000">1000 $</div>
+    </div>
+
+    <div class="custom">
+      <input id="customSum" type="number" min="100" placeholder="Своя сумма (мин. 100)" />
+      <button id="useCustom" class="btn-amt">Выбрать</button>
+    </div>
+
+    <div id="err" class="error" role="alert" aria-live="polite"></div>
+
+    <button class="pay" id="toPay">Оплатить</button>
+    <div class="info">После нажатия будет запущен таймер 15 минут — время для оплаты. Вас перенаправит на страницу с QR и адресом (USDT TRC20).</div>
+  </div>
+
+  <script>
+    const welcome = document.getElementById('welcome');
+    const userData = sessionStorage.getItem('fake_user');
+    if(userData){
+      try{
+        const u = JSON.parse(userData);
+                welcome.textContent = 'Пользователь: ' + (u.username || '—');
+      }catch(e){
+        welcome.textContent = '';
+      }
+    } else {
+      location.href = 'index.html';
+    }
+
+    const amtButtons = document.querySelectorAll('.btn-amt[data-amt]');
+    const customSum = document.getElementById('customSum');
+    const useCustom = document.getElementById('useCustom');
+    const toPay = document.getElementById('toPay');
+    const err = document.getElementById('err');
+    let chosen = null;
+
+    function clearActive(){
+      amtButtons.forEach(b=>b.classList.remove('active'));
+    }
+
+    amtButtons.forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        clearActive();
+        btn.classList.add('active');
+        chosen = Number(btn.dataset.amt);
+        err.style.display = 'none';
+      });
+    });
+
+    useCustom.addEventListener('click', ()=>{
+      const v = Number(customSum.value);
+      if(!v || isNaN(v) || v < 100){
+        err.textContent = 'Минимальная сумма 100 $';
+        err.style.display = 'block';
+        return;
+      }
+      clearActive();
+      chosen = v;
+      err.style.display = 'none';
+      useCustom.classList.add('active');
+      setTimeout(()=>useCustom.classList.remove('active'), 400);
+    });
+
+    toPay.addEventListener('click', ()=>{
+      if(!chosen){
+        err.textContent = 'Выберите сумму для пополнения';
+        err.style.display = 'block';
+        return;
+      }
+      sessionStorage.setItem('fake_amount', String(chosen));
+      // Устанавливаем expiry (в миллисекундах) — 15 минут от текущего момента
+      const expiry = Date.now() + 15 * 60 * 1000;
+      sessionStorage.setItem('payment_expiry', String(expiry));
+      location.href = 'payment.html';
+    });
+  </script>
+</body>
+</html>
