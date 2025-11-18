@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Регистрация — Пополнение</title>
+  <style>
+    :root{--card-bg: rgba(255,255,255,0.95);--accent:#2b7cff;}
+    html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;color:#111;}
+    body{
+      background: url('textur-gas-kvas-com-vlpu-p-teksturi-treidinga-1.jpg') center/cover no-repeat fixed;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .card{width:360px;padding:22px;border-radius:10px;box-shadow:0 6px 30px rgba(0,0,0,0.4);background:var(--card-bg);}
+    h1{margin:0 0 14px;font-size:18px;text-align:center;}
+    label{display:block;margin:10px 0 6px;font-size:13px}
+    input[type="text"],input[type="password"]{width:100%;padding:10px;border:1px solid #d7d7d7;border-radius:6px;font-size:14px}
+    button{margin-top:14px;width:100%;padding:11px;border:0;border-radius:8px;background:var(--accent);color:white;font-weight:600;cursor:pointer;font-size:15px}
+    .hint{font-size:13px;color:#666;margin-top:8px;text-align:center}
+    .error{color:#b00020;font-size:13px;margin-top:8px;display:none;text-align:center}
+  </style>
+</head>
+<body>
+  <div class="card" role="main" aria-labelledby="title">
+    <h1 id="title">Регистрация</h1>
+
+    <label for="username">Логин</label>
+    <input id="username" type="text" autocomplete="username" placeholder="Введите логин" />
+
+    <label for="password">Пароль</label>
+    <input id="password" type="password" autocomplete="new-password" placeholder="Пароль (мин. 6 символов)"/>
+
+    <label for="password2">Повторите пароль</label>
+    <input id="password2" type="password" autocomplete="new-password" placeholder="Повторите пароль"/>
+
+    <div id="err" class="error" role="alert" aria-live="polite"></div>
+
+    <button id="regBtn">Зарегистрироваться</button>
+
+    <div class="hint">Это демонстрационная регистрация — данные не отправляются на сервер.</div>
+  </div>
+
+  <script>
+    const usernameEl = document.getElementById('username');
+    const passwordEl = document.getElementById('password');
+    const password2El = document.getElementById('password2');
+    const errEl = document.getElementById('err');
+    const regBtn = document.getElementById('regBtn');
+
+    function showError(msg){
+      errEl.style.display = 'block';
+      errEl.textContent = msg;
+    }
+    function clearError(){
+      errEl.style.display = 'none';
+      errEl.textContent = '';
+    }
+
+    regBtn.addEventListener('click', ()=>{
+      clearError();
+      const username = usernameEl.value.trim();
+      const p1 = passwordEl.value;
+      const p2 = password2El.value;
+
+      if(!username){ showError('Введите логин'); return; }
+      if(p1.length < 6){ showError('Пароль должен быть минимум 6 символов'); return; }
+      if(p1 !== p2){ showError('Пароли не совпадают'); return; }
+
+      sessionStorage.setItem('fake_user', JSON.stringify({username: username}));
+      // Очистим старые данные оплаты, если были
+      sessionStorage.removeItem('fake_amount');
+      sessionStorage.removeItem('payment_expiry');
+      location.href = 'topup.html';
+    });
+
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter') regBtn.click();
+    });
+  </script>
+</body>
+</html>
