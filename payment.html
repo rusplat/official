@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Оплата — QR</title>
+  <style>
+    :root{--card-bg: rgba(255,255,255,0.95);--accent:#2b7cff;}
+    html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;color:#111;}
+    body{
+      background: url('textur-gas-kvas-com-vlpu-p-teksturi-treidinga-1.jpg') center/cover no-repeat fixed;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .card{width:420px;padding:22px;border-radius:10px;box-shadow:0 6px 30px rgba(0,0,0,0.4);background:var(--card-bg);}
+    h1{margin:0 0 12px;font-size:18px;text-align:center;}
+    .info{font-size:14px;color:#333;text-align:center;margin-bottom:8px}
+    .timer{font-weight:700;color:#b00;margin-top:6px;text-align:center}
+    .qr-wrap{text-align:center;margin:10px 0}
+    img.qr{width:220px;height:220px;border-radius:8px;border:1px solid #e1e1e1;background:white}
+    .addr{word-break:break-all;background:#f8f8f8;padding:10px;border-radius:8px;margin-top:12px}
+    .row{display:flex;gap:8px;margin-top:12px}
+    button{flex:1;padding:10px;border-radius:8px;border:0;cursor:pointer}
+    .copy{background:#2b7cff;color:white}
+    .back{background:#e6e6e6}
+    .small{font-size:12px;color:#666;margin-top:10px;text-align:center}
+    .expired{color:#b00020;font-weight:700;text-align:center;margin-top:10px}
+  </style>
+</head>
+<body>
+  <div class="card" role="main">
+    <h1>Оплата криптовалютой (USDT TRC20)</h1>
+    <div id="details" class="info"></div>
+    <div id="timer" class="timer" aria-live="polite"></div>
+
+    <div class="qr-wrap">
+      <img id="qrImg" class="qr" alt="QR код для оплаты" src="usdt_trc20_qr.png" />
+    </div>
+
+    <div id="addr" class="addr"></div>
+
+    <div class="row">
+      <button class="copy" id="copyBtn">Копировать адрес</button>
+      <button class="back" id="backBtn">Вернуться</button>
+    </div>
+
+    <div id="expiredMsg" class="expired" style="display:none">Время на оплату истекло. Пожалуйста, вернитесь и попробуйте снова.</div>
+    <div class="small">QR-код и адрес для оплаты (TRC20). Это демонстрация — сайт не проводит транзакции.</div>
+  </div>
+
+  <script>
+    // Установленный вами адрес
+    const USDT_TRON_ADDRESS = 'TTxL8srvCqom7RebeyZAjuWyActK9R9SD4';
+    const details = document.getElementById('details');
+    const qrImg = document.getElementById('qrImg');
+    const addrDiv = document.getElementById('addr');
+        const copyBtn = document.getElementById('copyBtn');
+    const backBtn = document.getElementById('backBtn');
+    const timerEl = document.getElementById('timer');
+    const expiredMsg = document.getElementById('expiredMsg');
+
+    const user = JSON.parse(sessionStorage.getItem('fake_user') || '{}');
+    const amount = sessionStorage.getItem('fake_amount') || '—';
+    const expiryStr = sessionStorage.getItem('payment_expiry');
+
+    if(!user || !user.username){
+      location.href = 'index.html';
+    }
+    if(!expiryStr){
+      // если время не задано — вернём на выбор суммы
+      location.href = 'topup.html';
+    }
+
+    details.textContent = `Пользователь: ${user.username} | Сумма: ${amount} $`;
+    addrDiv.textContent = USDT_TRON_ADDRESS;
+
+    // QR: по умолчанию используем файл usdt_trc20_qr.png (положите рядом).
+    // Если файл отсутствует у пользователя, можно раскомментировать генерацию через API:
+    // qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(USDT_TRON_ADDRESS);
+
+    // Таймер. expiry в миллисекундах
+    const expiry = Number(expiryStr);
+    function updateTimer(){
+      const now = Date.now();
+      const remain = expiry - now;
+      if(remain <= 0){
+        timerEl.textContent = '00:00';
+        expiredMsg.style.display = 'block';
+        copyBtn.disabled = true;
+        copyBtn.style.opacity = '0.6';
+        return false;
+      } else {
+        const min = Math.floor(remain / 1000 / 60);
+        const sec = Math.floor((remain / 1000) % 60);
+        timerEl.textContent = `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')} — осталось для оплаты`;
+        return true;
+      }
+    }
+
+    // Запускаем интервал
+    let running = updateTimer();
+    const tId = setInterval(()=>{
+      running = updateTimer();
+      if(!running){
+        clearInterval(tId);
+      }
+    }, 1000);
+
+    copyBtn.addEventListener('click', async ()=>{
+      try{
+        await navigator.clipboard.writeText(USDT_TRON_ADDRESS);
+        copyBtn.textContent = 'Скопировано!';
+        setTimeout(()=>copyBtn.textContent = 'Копировать адрес', 2000);
+      }catch(e){
+        alert('Не удалось скопировать автоматически. Скопируйте вручную.');
+      }
+    });
+
+    backBtn.addEventListener('click', ()=>{
+      // при возврате оставим expiry, чтобы пользователь мог вернуться обратно,
+      // если хочет повторить оплату в пределах времени
+      location.href = 'topup.html';
+    });
+  </script>
+</body>
+</html>
